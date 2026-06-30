@@ -6,12 +6,14 @@ interface Props {
   members: Member[];
   loading: boolean;
   onMemberAdded: (member: Member) => void;
+  onMemberDeleted: (id: number) => void;
 }
 
-export function MemberList({ members, loading, onMemberAdded }: Props) {
+export function MemberList({ members, loading, onMemberAdded, onMemberDeleted }: Props) {
   const [name, setName] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -26,6 +28,16 @@ export function MemberList({ members, loading, onMemberAdded }: Props) {
       setError(err instanceof Error ? err.message : 'Failed to add member.');
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleDelete(member: Member) {
+    if (!window.confirm(`Remove ${member.name}? Their purchase history will also be deleted.`)) return;
+    setDeletingId(member.id);
+    try {
+      onMemberDeleted(member.id);
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -53,7 +65,18 @@ export function MemberList({ members, loading, onMemberAdded }: Props) {
       ) : (
         <ul className="member-list">
           {members.map(m => (
-            <li key={m.id}>{m.name}</li>
+            <li key={m.id} className="member-item">
+              <span>{m.name}</span>
+              <button
+                className="delete-btn"
+                onClick={() => handleDelete(m)}
+                disabled={deletingId === m.id}
+                title="Remove member"
+                aria-label={`Remove ${m.name}`}
+              >
+                {deletingId === m.id ? '…' : '✕'}
+              </button>
+            </li>
           ))}
         </ul>
       )}

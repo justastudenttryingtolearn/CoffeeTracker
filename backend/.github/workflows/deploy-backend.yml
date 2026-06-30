@@ -1,0 +1,82 @@
+# Deploy Coffee Tracker backend to Azure App Service (Docker / Container Registry)
+#
+# Required GitHub repository secrets:
+#   AZURE_CREDENTIALS          – JSON output from: az ad sp create-for-rbac --sdk-auth
+#   REGISTRY_LOGIN_SERVER      – e.g. coffeetracker.azurecr.io
+#   REGISTRY_USERNAME          – ACR username
+#   REGISTRY_PASSWORD          – ACR password
+#   AZURE_WEBAPP_NAME          – App Service name, e.g. coffee-tracker-api
+#   AZURE_RESOURCE_GROUP       – Resource group name
+
+name: Deploy Backend to Azure
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/deploy-backend.yml'
+  workflow_dispatch:
+
+env:
+  IMAGE_NAME: coffee-tracker-backend
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: backend/.nvmrc
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - run: npm ci
+      - run: npm test
+
+  build-and-deploy:
+    name: Build & Deploy
+    runs-on: ubuntu-latest
+    needs: test
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Azure Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: backend
+          file: backend/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+            ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:latest
+
+      - name: Log in to Azure
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          resource-group-name: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          images: ${{ secrets.REGISTRY_LOGIN_SERVER }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+

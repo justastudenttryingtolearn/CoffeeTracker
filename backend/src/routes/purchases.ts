@@ -3,9 +3,13 @@ import { getAllPurchases, createPurchase, deletePurchase } from '../services/pur
 
 const router = Router();
 
-router.get('/', (_req: Request, res: Response) => {
-  const purchases = getAllPurchases();
-  res.json(purchases);
+router.get('/', (req: Request, res: Response) => {
+  const rawLimit = typeof req.query.limit === 'string' ? req.query.limit : '50';
+  const rawOffset = typeof req.query.offset === 'string' ? req.query.offset : '0';
+  const limit = Math.min(Number.parseInt(rawLimit, 10) || 50, 200);
+  const offset = Number.parseInt(rawOffset, 10) || 0;
+  const result = getAllPurchases(limit, offset);
+  res.json(result);
 });
 
 router.post('/', (req: Request, res: Response) => {
@@ -25,8 +29,8 @@ router.post('/', (req: Request, res: Response) => {
 });
 
 router.delete('/:id', (req: Request, res: Response) => {
-  const id = parseInt(req.params.id, 10);
-  if (isNaN(id)) {
+  const id = Number.parseInt(req.params.id, 10);
+  if (Number.isNaN(id)) {
     res.status(400).json({ error: 'Invalid purchase id.' });
     return;
   }

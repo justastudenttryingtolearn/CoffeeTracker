@@ -1,0 +1,23 @@
+# Dependencies & build output
+node_modules/
+dist/
+
+# SQLite data files (never commit the live DB)
+data/*.db
+data/*.db-shm
+data/*.db-wal
+
+# Environment secrets
+.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Coverage
+coverage/
+

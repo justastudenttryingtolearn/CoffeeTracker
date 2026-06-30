@@ -1,7 +1,8 @@
 import db from '../db/database';
-import { Purchase } from '../types';
+import { Purchase, PaginatedResponse } from '../types';
 
-export function getAllPurchases(): Purchase[] {
+/** Returns all purchases (no pagination) – used internally by the status service. */
+export function getAllPurchasesUnpaginated(): Purchase[] {
   return db
     .prepare(
       `SELECT p.id, p.memberId, m.name AS memberName, p.note, p.createdAt
@@ -10,6 +11,20 @@ export function getAllPurchases(): Purchase[] {
        ORDER BY p.createdAt DESC`
     )
     .all() as unknown as Purchase[];
+}
+
+export function getAllPurchases(limit = 50, offset = 0): PaginatedResponse<Purchase> {
+  const total = (db.prepare(`SELECT COUNT(*) as count FROM purchases`).get() as { count: number }).count;
+  const data = db
+    .prepare(
+      `SELECT p.id, p.memberId, m.name AS memberName, p.note, p.createdAt
+       FROM purchases p
+       JOIN members m ON p.memberId = m.id
+       ORDER BY p.createdAt DESC
+       LIMIT ? OFFSET ?`
+    )
+    .all(limit, offset) as unknown as Purchase[];
+  return { data, total, limit, offset };
 }
 
 export function createPurchase(memberId: number, note: string | null): Purchase {

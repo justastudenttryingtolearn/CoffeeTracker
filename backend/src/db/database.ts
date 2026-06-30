@@ -2,6 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
+import { SCHEMA_SQL } from './schema';
 
 dotenv.config();
 
@@ -20,20 +21,6 @@ db.exec(`PRAGMA journal_mode = WAL`);
 db.exec(`PRAGMA foreign_keys = ON`);
 
 // Create tables if they don't exist
-db.exec(`
-  CREATE TABLE IF NOT EXISTS members (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE COLLATE NOCASE,
-    createdAt TEXT NOT NULL DEFAULT (datetime('now'))
-  );
-
-  CREATE TABLE IF NOT EXISTS purchases (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    memberId INTEGER NOT NULL,
-    note TEXT,
-    createdAt TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (memberId) REFERENCES members(id) ON DELETE CASCADE
-  );
-`);
+db.exec(SCHEMA_SQL);
 
 export default db;

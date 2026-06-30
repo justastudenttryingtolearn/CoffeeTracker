@@ -1,10 +1,11 @@
 import { DatabaseSync } from 'node:sqlite';
 import path from 'path';
+import fs from 'fs';
+import { SCHEMA_SQL } from './schema';
 
 // Use in-memory database for seeding to avoid file path issues
 const DB_PATH = process.env.DB_PATH || path.join(__dirname, '../../data/coffee.db');
 
-import fs from 'fs';
 const dataDir = path.dirname(DB_PATH);
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
@@ -12,20 +13,7 @@ if (!fs.existsSync(dataDir)) {
 
 const db = new DatabaseSync(DB_PATH);
 db.exec(`PRAGMA foreign_keys = ON`);
-db.exec(`
-  CREATE TABLE IF NOT EXISTS members (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT NOT NULL UNIQUE COLLATE NOCASE,
-    createdAt TEXT NOT NULL DEFAULT (datetime('now'))
-  );
-  CREATE TABLE IF NOT EXISTS purchases (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    memberId INTEGER NOT NULL,
-    note TEXT,
-    createdAt TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (memberId) REFERENCES members(id) ON DELETE CASCADE
-  );
-`);
+db.exec(SCHEMA_SQL);
 
 // Clear existing data and insert seed data
 db.exec(`DELETE FROM purchases; DELETE FROM members;`);

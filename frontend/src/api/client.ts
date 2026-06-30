@@ -1,4 +1,4 @@
-import type { Member, Purchase, StatusResponse } from '../types';
+import type { Member, Purchase, StatusResponse, PaginatedResponse } from '../types';
 
 const BASE = '/api';
 
@@ -11,7 +11,6 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.error || `Request failed: ${res.status}`);
   }
-  // 204 No Content has no body
   if (res.status === 204) return undefined as unknown as T;
   return res.json() as Promise<T>;
 }
@@ -25,7 +24,11 @@ export const api = {
       body: JSON.stringify({ name }),
     }),
 
-  getPurchases: () => request<Purchase[]>('/purchases'),
+  deleteMember: (id: number) =>
+    request<void>(`/members/${id}`, { method: 'DELETE' }),
+
+  getPurchases: (limit = 50, offset = 0) =>
+    request<PaginatedResponse<Purchase>>(`/purchases?limit=${limit}&offset=${offset}`),
 
   addPurchase: (memberId: number, note: string | null) =>
     request<Purchase>('/purchases', {

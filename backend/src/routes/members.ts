@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { getAllMembers, createMember } from '../services/memberService';
+import { getAllMembers, createMember, deleteMember } from '../services/memberService';
 
 const router = Router();
 
@@ -22,6 +22,21 @@ router.post('/', (req: Request, res: Response) => {
     const message = err instanceof Error ? err.message : 'Failed to create member.';
     res.status(409).json({ error: message });
   }
+});
+
+router.delete('/:id', (req: Request, res: Response) => {
+  const id = Number.parseInt(req.params.id, 10);
+  if (Number.isNaN(id)) {
+    res.status(400).json({ error: 'Invalid member id.' });
+    return;
+  }
+
+  const deleted = deleteMember(id);
+  if (!deleted) {
+    res.status(404).json({ error: 'Member not found.' });
+    return;
+  }
+  res.status(204).send();
 });
 
 export default router;

@@ -16,3 +16,10 @@ export interface StatusResponse {
   lastBuyer: Member | null;
   nextBuyer: Member | null;
 }
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  limit: number;
+  offset: number;
+}

@@ -27,3 +27,8 @@ export function createMember(name: string): Member {
   const result = db.prepare(`INSERT INTO members (name, createdAt) VALUES (?, ?)`).run(trimmed, createdAt);
   return { id: result.lastInsertRowid as number, name: trimmed, createdAt };
 }
+
+export function deleteMember(id: number): boolean {
+  const result = db.prepare(`DELETE FROM members WHERE id = ?`).run(id);
+  return result.changes > 0;
+}
